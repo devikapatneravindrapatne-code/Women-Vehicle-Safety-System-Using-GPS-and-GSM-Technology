@@ -1,0 +1,106 @@
+import serial
+import time
+import RPi.GPIO as GPIO
+import pynmea2
+
+# Panic Button Pin
+BUTTON_PIN = 18
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+# GPS Port
+gps = serial.Serial('/dev/serial0', baudrate=9600, timeout=1)
+
+# GSM Port
+gsm = serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=1)
+
+# Emergency Number
+PHONE_NUMBER = "+91XXXXXXXXXX"
+
+
+def get_gps_location():
+
+    latitude = None
+    longitude = None
+
+    print("Getting GPS location...")
+
+    start_time = time.time()
+
+    while time.time() - start_time < 20:
+
+        data = gps.readline().decode('utf-8', errors='ignore')
+
+        if data.startswith('$GPGGA'):
+
+            try:
+                msg = pynmea2.parse(data)
+
+                latitude = msg.latitude
+                longitude = msg.longitude
+
+                return latitude, longitude
+
+            except:
+                pass
+
+    return None, None
+
+
+def send_sms(message):
+
+    gsm.write(b'AT\r')
+    time.sleep(1)
+
+    gsm.write(b'AT+CMGF=1\r')
+    time.sleep(1)
+
+    gsm.write(
+        ('AT+CMGS="{}"\r'.format(PHONE_NUMBER)).encode()
+    )
+    time.sleep(1)
+
+    gsm.write(message.encode())
+    gsm.write(bytes([26]))
+
+    time.sleep(3)
+
+    print("SMS Sent")
+
+
+print("Women Safety System Started")
+
+while True:
+
+    if GPIO.input(BUTTON_PIN) == 0:
+
+        print("Emergency Button Pressed!")
+
+        lat, lon = get_gps_location()
+
+        if lat and lon:
+
+            location_link = (
+                f"https://maps.google.com/?q={lat},{lon}"
+            )
+
+            message = (
+                "EMERGENCY ALERT!\n"
+                "I need help.\n"
+                f"Location: {location_link}"
+            )
+
+        else:
+
+            message = (
+                "EMERGENCY ALERT!\n"
+                "I need help.\n"
+                "GPS location unavailable."
+            )
+
+        send_sms(message)
+
+        time.sleep(10)
+
+    time.sleep(0.1)
