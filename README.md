@@ -39,7 +39,7 @@ The controller formats an emergency message.
 The GSM module sends the message to predefined emergency contacts.
 Family members or authorities receive the location and provide assistance.
 
-Expected Results
+Results
 
 Successful emergency alert generation.
 Accurate GPS location acquisition.
