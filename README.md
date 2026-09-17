@@ -21,12 +21,16 @@ Block Diagram
 
 Panic Button
       ↓
+      
 ESP32 / Raspberry Pi
       ↓
+      
 GPS Module
       ↓
+      
 GSM Module
       ↓
+      
 Emergency Contacts
 
 Working Principle
